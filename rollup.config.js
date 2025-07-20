@@ -1,9 +1,8 @@
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import resolve from '@rollup/plugin-node-resolve';
-import typescript from '@rollup/plugin-typescript';
-import { readFileSync } from 'fs';
-import dts from 'rollup-plugin-dts';
+const resolve = require('@rollup/plugin-node-resolve');
+const commonjs = require('@rollup/plugin-commonjs');
+const typescript = require('@rollup/plugin-typescript');
+const json = require('@rollup/plugin-json');
+const { readFileSync } = require('fs');
 
 // Read package.json
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
@@ -25,7 +24,7 @@ const commonPlugins = [
   json(),
 ];
 
-export default [
+module.exports = [
   // CommonJS build
   {
     input: 'src/index.ts',
@@ -40,7 +39,8 @@ export default [
       ...commonPlugins,
       typescript({
         tsconfig: './tsconfig.json',
-        declaration: false,
+        declaration: true,
+        declarationDir: 'dist',
         outDir: 'dist',
       }),
     ],
@@ -64,16 +64,5 @@ export default [
         outDir: 'dist',
       }),
     ],
-  },
-  
-  // Type definitions
-  {
-    input: 'src/index.ts',
-    output: {
-      file: packageJson.types,
-      format: 'esm',
-    },
-    external,
-    plugins: [dts()],
   },
 ]; 
