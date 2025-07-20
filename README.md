@@ -18,23 +18,19 @@ Universal authentication library for **Expo/React Native** with **Google Sign-In
 
 ## 📦 Installation
 
+**Simple one-command installation - all dependencies included!**
+
 ```bash
 npm install @techalphamatrix/expo-universal-auth
 ```
 
-### Required Dependencies
+**That's it!** All required dependencies are automatically installed:
+- ✅ `@react-native-google-signin/google-signin` (Google OAuth)
+- ✅ `@supabase/supabase-js` (Supabase backend)
+- ✅ `firebase` (Firebase backend)
+- ✅ `expo-apple-authentication` (Apple Sign-In)
 
-```bash
-# Core dependency (always required)
-npm install @react-native-google-signin/google-signin
-
-# Choose your backend (at least one required)
-npm install @supabase/supabase-js    # For Supabase
-npm install firebase                 # For Firebase
-
-# Apple Sign-In (iOS only)
-npx expo install expo-apple-authentication
-```
+No need to install anything else! 🎉```
 
 ## 🚀 Quick Start
 
