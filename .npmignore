@@ -1,0 +1,39 @@
+# Source files (dist/ contains compiled code)
+src/
+tsconfig.json
+rollup.config.js
+
+# Development files
+.env*
+*.test.*
+**/__tests__/**
+**/__mocks__/**
+
+# Build tools
+.eslintrc*
+jest.config.*
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.travis.yml
+.circleci/
+
+# Documentation drafts
+docs/drafts/
+
+# Development logs
+*.log
+
+# Rollup cache
+.rpt2_cache/
+
+# Coverage
+coverage/ 
