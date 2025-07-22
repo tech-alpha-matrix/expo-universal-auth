@@ -1,6 +1,6 @@
 {
   "name": "@techalphamatrix/expo-universal-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal authentication library for Expo/React Native with Google, Apple Sign-In and multiple backend providers (Supabase, Firebase)",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -60,7 +60,8 @@
     "firebase": "^10.5.0",
     "expo-apple-authentication": "^6.4.1",
     "tslib": "^2.8.1"
-  },  "devDependencies": {
+  },
+  "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.5",
     "@rollup/plugin-json": "^6.0.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
@@ -86,4 +87,4 @@
     "node": ">=16.0.0",
     "npm": ">=7.0.0"
   }
-} 
+}
