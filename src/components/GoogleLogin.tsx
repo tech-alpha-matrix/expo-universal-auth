@@ -1,41 +1,60 @@
-// Note: Simplified component for library packaging
-// Users should copy the full implementation from the original project
-
+import React from 'react';
 import { GoogleLoginProps } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 /**
- * Google Login Component (Simplified)
+ * Google Login Component
  * 
- * Note: This is a minimal implementation for library packaging.
- * For full functionality, copy the complete GoogleLogin component
- * from the original project.
- * 
- * @deprecated Use the full implementation from the examples repository
+ * Provides Google Sign-In functionality with customizable UI rendering.
+ * Uses the authentication context to manage sign-in state and user session.
  */
-export function GoogleLogin(props: GoogleLoginProps) {
-  console.warn('GoogleLogin: Using minimal implementation. Please implement full component for production use.');
-  
-  // Return a placeholder that renders the sign-in button
-  return props.renderSignInButton({
-    onPress: () => {
-      const error = { message: 'Please implement full GoogleLogin component' };
-      props.onError?.(error);
-    },
-    loading: false,
-    disabled: true,
-  });
-}
+export function GoogleLogin({
+  renderSignInButton,
+  renderUserInfo,
+  onSuccess,
+  onError,
+  onSignOut,
+}: GoogleLoginProps) {
+  const { user, loading, signInWithGoogle, signOut } = useAuth();
 
-/**
- * @deprecated This is a minimal implementation for library packaging.
- * 
- * For production use, copy the complete GoogleLogin component from:
- * https://github.com/tech-alpha-matrix/expo-universal-auth/tree/main/examples
- * 
- * The full implementation includes:
- * - Integration with useAuth hook
- * - Google Sign-In functionality
- * - Loading states and error handling
- * - User info display
- * - Sign-out functionality
- */ 
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      if (user) {
+        onSuccess?.(user);
+      }
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Google sign-in failed' };
+      onError?.(authError);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      onSignOut?.();
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Sign-out failed' };
+      onError?.(authError);
+    }
+  };
+
+  // If user is authenticated and renderUserInfo is provided, show user info
+  if (user && renderUserInfo) {
+    return renderUserInfo({
+      user,
+      onSignOut: handleSignOut,
+    });
+  }
+
+  // Otherwise, show sign-in button
+  return renderSignInButton({
+    onPress: handleSignIn,
+    loading,
+    disabled: loading,
+  });
+} 

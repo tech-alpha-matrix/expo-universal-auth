@@ -1,81 +1,229 @@
-// Note: For now, we provide a simplified context implementation
-// Users should copy the full implementation from the original project
-
+import React, { createContext, useContext, useEffect, useReducer, useCallback } from 'react';
 import {
     AuthConfig,
     AuthError,
     AuthProvider,
     AuthSession,
+    AuthState,
     AuthUser
 } from '../types';
 
-/**
- * Simplified AuthContext props for library distribution
- * This is a basic implementation - users should implement full context
- * based on their specific needs
- */
+interface AuthContextType extends AuthState {
+  isAuthenticated: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshSession: () => Promise<void>;
+}
+
 export interface AuthContextProps {
   provider: AuthProvider;
   config: AuthConfig;
   onAuthError?: (error: AuthError) => void;
-  children: any;
+  children: React.ReactNode;
 }
 
-/**
- * Basic AuthContextProvider implementation
- * 
- * Note: This is a minimal implementation for library packaging.
- * For full functionality, copy the complete AuthContext implementation
- * from the original project.
- */
-export function AuthContextProvider({ children }: AuthContextProps) {
-  // This is a placeholder implementation
-  // Users should implement the full context with React hooks
-  console.warn('AuthContextProvider: Using minimal implementation. Please implement full context for production use.');
-  
-  return children;
+type AuthAction =
+  | { type: 'AUTH_START' }
+  | { type: 'AUTH_SUCCESS'; payload: { user: AuthUser; session: AuthSession } }
+  | { type: 'AUTH_ERROR'; payload: AuthError }
+  | { type: 'AUTH_SIGNOUT' }
+  | { type: 'CLEAR_ERROR' };
+
+function authReducer(state: AuthState, action: AuthAction): AuthState {
+  switch (action.type) {
+    case 'AUTH_START':
+      return { ...state, loading: true, error: null };
+    case 'AUTH_SUCCESS':
+      return {
+        user: action.payload.user,
+        session: action.payload.session,
+        loading: false,
+        error: null,
+      };
+    case 'AUTH_ERROR':
+      return {
+        user: null,
+        session: null,
+        loading: false,
+        error: action.payload,
+      };
+    case 'AUTH_SIGNOUT':
+      return {
+        user: null,
+        session: null,
+        loading: false,
+        error: null,
+      };
+    case 'CLEAR_ERROR':
+      return { ...state, error: null };
+    default:
+      return state;
+  }
 }
 
-/**
- * Authentication hook
- * 
- * Note: This is a minimal implementation for library packaging.
- * For full functionality, copy the complete useAuth hook implementation
- * from the original project.
- */
-export function useAuth() {
-  // This is a placeholder implementation
-  console.warn('useAuth: Using minimal implementation. Please implement full hook for production use.');
-  
-  return {
-    user: null as AuthUser | null,
-    session: null as AuthSession | null,
-    isAuthenticated: false,
-    loading: false,
-    error: null as AuthError | null,
-    signInWithGoogle: async () => {
-      throw new Error('Please implement full useAuth hook');
-    },
-    signInWithApple: async () => {
-      throw new Error('Please implement full useAuth hook');
-    },
-    signOut: async () => {
-      throw new Error('Please implement full useAuth hook');
-    },
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthContextProvider({ provider, config, onAuthError, children }: AuthContextProps) {
+  const initialState: AuthState = {
+    user: null,
+    session: null,
+    loading: true,
+    error: null,
   };
+
+  const [state, dispatch] = useReducer(authReducer, initialState);
+
+  useEffect(() => {
+    let isMounted = true;
+    let unsubscribe: (() => void) | null = null;
+
+    const initializeAuth = async () => {
+      try {
+        await provider.configure(config);
+        
+        const currentSession = await provider.getCurrentSession();
+        if (currentSession && isMounted) {
+          dispatch({
+            type: 'AUTH_SUCCESS',
+            payload: { user: currentSession.user, session: currentSession },
+          });
+        } else if (isMounted) {
+          dispatch({ type: 'AUTH_SIGNOUT' });
+        }
+
+        unsubscribe = provider.onAuthStateChange((session) => {
+          if (!isMounted) return;
+          
+          if (session) {
+            dispatch({
+              type: 'AUTH_SUCCESS',
+              payload: { user: session.user, session },
+            });
+          } else {
+            dispatch({ type: 'AUTH_SIGNOUT' });
+          }
+        });
+      } catch (error) {
+        if (isMounted) {
+          const authError = error instanceof Error ? 
+            { message: error.message } : 
+            { message: 'Failed to initialize authentication' };
+          dispatch({ type: 'AUTH_ERROR', payload: authError });
+          onAuthError?.(authError);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [provider, config, onAuthError]);
+
+  const signInWithGoogle = useCallback(async () => {
+    dispatch({ type: 'AUTH_START' });
+    try {
+      const session = await provider.signInWithGoogle();
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: session.user, session },
+      });
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Google sign-in failed' };
+      dispatch({ type: 'AUTH_ERROR', payload: authError });
+      onAuthError?.(authError);
+      throw error;
+    }
+  }, [provider, onAuthError]);
+
+  const signInWithApple = useCallback(async () => {
+    if (!provider.signInWithApple) {
+      const error = { message: 'Apple Sign-In not supported by this provider' };
+      dispatch({ type: 'AUTH_ERROR', payload: error });
+      onAuthError?.(error);
+      throw new Error(error.message);
+    }
+
+    dispatch({ type: 'AUTH_START' });
+    try {
+      const session = await provider.signInWithApple();
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: session.user, session },
+      });
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Apple sign-in failed' };
+      dispatch({ type: 'AUTH_ERROR', payload: authError });
+      onAuthError?.(authError);
+      throw error;
+    }
+  }, [provider, onAuthError]);
+
+  const signOut = useCallback(async () => {
+    dispatch({ type: 'AUTH_START' });
+    try {
+      await provider.signOut();
+      dispatch({ type: 'AUTH_SIGNOUT' });
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Sign-out failed' };
+      dispatch({ type: 'AUTH_ERROR', payload: authError });
+      onAuthError?.(authError);
+      throw error;
+    }
+  }, [provider, onAuthError]);
+
+  const refreshSession = useCallback(async () => {
+    if (!state.session) {
+      throw new Error('No session to refresh');
+    }
+
+    try {
+      const newSession = await provider.refreshSession();
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: newSession.user, session: newSession },
+      });
+    } catch (error) {
+      const authError = error instanceof Error ? 
+        { message: error.message } : 
+        { message: 'Session refresh failed' };
+      dispatch({ type: 'AUTH_ERROR', payload: authError });
+      onAuthError?.(authError);
+      throw error;
+    }
+  }, [provider, state.session, onAuthError]);
+
+  const value: AuthContextType = {
+    ...state,
+    isAuthenticated: !!state.user && !!state.session,
+    signInWithGoogle,
+    signInWithApple,
+    signOut,
+    refreshSession,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-/**
- * @deprecated This is a minimal implementation for library packaging.
- * 
- * For production use, copy the complete AuthContext implementation from:
- * https://github.com/tech-alpha-matrix/expo-universal-auth/tree/main/examples
- * 
- * The full implementation includes:
- * - React Context with state management
- * - Provider configuration and initialization  
- * - Authentication state management
- * - Error handling and loading states
- * - Automatic session refresh
- * - Auth state persistence
- */ 
+export function useAuth(): AuthContextType {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthContextProvider');
+  }
+  return context;
+} 
