@@ -9,9 +9,6 @@
  * - TypeScript support
  */
 
-// Types
-export * from './types';
-
 // Configuration utilities
 export { EXAMPLE_CONFIGS, createAuthConfig, validateAuthConfig } from './utils/config';
 

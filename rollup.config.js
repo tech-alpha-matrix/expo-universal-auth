@@ -20,7 +20,9 @@ const commonPlugins = [
     preferBuiltins: false,
     browser: true,
   }),
-  commonjs(),
+  commonjs({
+    include: 'node_modules/**',
+  }),
   json(),
 ];
 
@@ -33,6 +35,7 @@ module.exports = [
       format: 'cjs',
       sourcemap: true,
       exports: 'named',
+      interop: 'auto',
     },
     external,
     plugins: [
@@ -42,6 +45,11 @@ module.exports = [
         declaration: true,
         declarationDir: 'dist',
         outDir: 'dist',
+        sourceMap: true,
+        inlineSources: false,
+        module: 'ESNext',
+        target: 'ES2020',
+        moduleResolution: 'node',
       }),
     ],
   },
@@ -61,7 +69,13 @@ module.exports = [
       typescript({
         tsconfig: './tsconfig.json',
         declaration: false,
+        declarationMap: false,
         outDir: 'dist',
+        sourceMap: true,
+        inlineSources: false,
+        module: 'ESNext',
+        target: 'ES2020',
+        moduleResolution: 'node',
       }),
     ],
   },
