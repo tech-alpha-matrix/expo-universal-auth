@@ -58,7 +58,8 @@
     "@react-native-google-signin/google-signin": "^10.1.0",
     "@supabase/supabase-js": "^2.38.0",
     "firebase": "^10.5.0",
-    "expo-apple-authentication": "^6.4.1"
+    "expo-apple-authentication": "^6.4.1",
+    "tslib": "^2.8.1"
   },  "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.5",
     "@rollup/plugin-json": "^6.0.1",
